@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${APP_DB_HOST}:${APP_DB_PORT}/${APP_DB_NAME}
+    username: ${APP_DB_USER}
+    password: ${APP_DB_PASS}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      "hibernate.format_sql": true
+      hibernate.jdbc.lob.non_contextual_creation: true
+      # (opcional) solo por seguridad, no estrictamente necesario
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoints.web.exposure.include: health,info
