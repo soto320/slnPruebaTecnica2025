@@ -4,17 +4,28 @@ server:
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${APP_DB_HOST}:${APP_DB_PORT}/${APP_DB_NAME}
-    username: ${APP_DB_USER}
-    password: ${APP_DB_PASS}
+    url: jdbc:postgresql://${APP_DB_HOST:db}:${APP_DB_PORT:5432}/${APP_DB_NAME:appdb}
+    username: ${APP_DB_USER:appuser}
+    password: ${APP_DB_PASS:app-secret}
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none          # NO tocar el esquema (ni crear, ni validar, ni actualizar)
     properties:
-      "hibernate.format_sql": true
+      hibernate.format_sql: true
       hibernate.jdbc.lob.non_contextual_creation: true
-      # (opcional) solo por seguridad, no estrictamente necesario
       hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true  # crea flyway_schema_history aunque el schema no esté vacío
+    baseline-version: 0
+    clean-disabled: true       # evita "flyway clean" accidental
+
 management:
-  endpoints.web.exposure.include: health,info
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

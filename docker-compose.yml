@@ -1,4 +1,5 @@
-version: "3.9"
+# (opcional) elimina esta línea si quieres evitar el warning:
+# version: "3.9"
 
 services:
   db:
@@ -13,7 +14,6 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      # Postgres no expone HTTP; usa pg_isready
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
@@ -29,19 +29,17 @@ services:
       db:
         condition: service_healthy
     environment:
-      # Perfil de Spring a usar
-      SPRING_PROFILES_ACTIVE: docker
-      # Vars de tu .env (mantén los nombres APP_* tal cual)
-      APP_ENV: ${APP_ENV}
-      APP_DB_HOST: ${APP_DB_HOST}
-      APP_DB_PORT: ${APP_DB_PORT}
-      APP_DB_NAME: ${APP_DB_NAME}
-      APP_DB_USER: ${APP_DB_USER}
-      APP_DB_PASS: ${APP_DB_PASS}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      # Usa directamente las variables de Postgres (evita encadenar en .env)
+      APP_ENV: ${APP_ENV:-production}
+      APP_DB_HOST: ${APP_DB_HOST:-db}
+      APP_DB_PORT: ${APP_DB_PORT:-5432}
+      APP_DB_NAME: ${POSTGRES_DB}
+      APP_DB_USER: ${POSTGRES_USER}
+      APP_DB_PASS: ${POSTGRES_PASSWORD}
     ports:
       - "${APP_PORT:-8080}:8080"
     healthcheck:
-      # Requiere curl (ver nota más abajo para Dockerfile)
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
@@ -52,18 +50,17 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # esto se inyecta al stage de build de Vite
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     container_name: front
     depends_on:
       app:
         condition: service_started
     ports:
       - "${FRONT_PORT:-8081}:80"
-    environment:
-      # Tu variable para el front (Vite)
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     restart: unless-stopped
 
-  # Para usar Caddy, levántalo con:  docker compose --profile caddy up -d
   caddy:
     image: caddy:2-alpine
     container_name: caddy
